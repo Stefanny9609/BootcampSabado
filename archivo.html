@@ -1,0 +1,150 @@
+<html>
+    <head>
+     <!--<link rel="stylesheet" href="estilos.css">-->
+    </head>
+    <body>
+        <h1>Registro personas de la base de datos</h1>
+        <br>
+        <table>
+            <thead>
+                <th>Indice</th>
+                <th>Identificacion</th>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Acciones</th>
+            </thead>
+            <tbody id="datosPersonasBD">
+            </tbody>
+        </table>
+        <form id="PersonaFormulario">
+            <label>Identificación: </label>
+            <input type = "number" id ="identificacion" required>
+
+            <label>Nombre: </label>
+            <input type = "text" id ="nombre" required>
+
+            <label>Edad: </label>
+            <input type = "number" id ="edad" required>     
+
+            <button type = "submit">Agregar Estudiante</button> 
+            <button onclick="guardarCambios()">Guardar Cambios</button>
+        </form>
+        
+        <script>
+            async function cargarPersonasDesdeBD() {
+                try{
+                    const respuesta=await fetch('http://127.0.0.1:5000/datosBase');
+                    const datos = await respuesta.json();
+                    const cuerpoTabla = document.getElementById("datosPersonasBD");
+                    cuerpoTabla.innerHTML="";
+                    let indice = 1;
+                    datos.forEach((item) => {
+                        const fila = document.createElement('tr');
+                        fila.innerHTML = `
+                            <td>${indice}</td>
+                            <td>${item.identificacion}</td>
+                            <td>${item.nombre}</td>
+                            <td>${item.edad}</td>
+                            <td> <button onclick="actualizar(${item.identificacion})"> Actualizar </button>
+                                <button onclick = "eliminar(${item.identificacion})"> Eliminar </button> </td>
+                        `;
+                        indice++; 
+                        cuerpoTabla.appendChild(fila);
+                    });
+                }catch(error){
+                    console.log("El error fue: "+error)
+                }                
+            }
+            document.getElementById('PersonaFormulario').addEventListener('submit',
+                async function (event) {
+                    event.preventDefault();
+                    const persona = { persona:{
+                            identificacion: document.getElementById('identificacion').value,
+                            nombre: document.getElementById('nombre').value,
+                            edad: document.getElementById('edad').value
+                    }
+                    }
+                     
+                    try{
+                        const response = await fetch('http://127.0.0.1:5000/agregarPersonasBD',{
+                            method: 'POST',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify(persona) 
+                        });
+                        if (response.ok){
+                            console.log("Se agrego correctamente.");
+                        }else{
+                            alert('Error al enviar datos');
+                        }
+                    }catch(error) {
+                        console.error('Error al enviar datos: ',error);
+                    }
+                });
+
+            document.addEventListener('DOMContentLoaded', cargarPersonasDesdeBD);
+
+            async function eliminar(identificacion) {
+                alert('Se elimino correctamente datos de usuario con id: '+identificacion);        
+                try{
+                        const response = await fetch('http://127.0.0.1:5000/eliminarPersona/'+identificacion,{
+                            method: 'DELETE'
+                        });
+                        if (response.ok){
+                            console.log("Se elimino correctamente.");
+                        }else{
+                            alert('Error al eliminar datos');
+                        }
+                    }catch(error) {
+                        console.error('Error al eliminar datos: ',error);
+                    }
+            }
+            
+            async function actualizar(identificacion) {
+                alert(identificacion);
+                 try{
+                    const respuesta=await fetch('http://127.0.0.1:5000/buscarPersona/'+identificacion);
+                    const datos = await respuesta.json();
+                    console.log(datos[0].nombre);
+                    document.getElementById("identificacion").value = datos[0].identificacion;
+                    document.getElementById("nombre").value = datos[0].nombre;
+                    document.getElementById("edad").value = datos[0].edad;
+                    
+                    const persona = { persona:{
+                            identificacion: document.getElementById('identificacion').value,
+                            nombre: document.getElementById('nombre').value,
+                            edad: document.getElementById('edad').value
+                    }
+                    }
+
+                 }catch(error)
+                 {
+                    console.log(error);
+                 }
+            }
+
+            async function guardarCambios(){
+                 const id = document.getElementById('identificacion').value;
+                const persona = {
+                    identificacion: document.getElementById('identificacion').value,
+                    nombre: document.getElementById('nombre').value,
+                    edad: document.getElementById('edad').value
+                }
+                try{
+                    const response = await fetch('http://127.0.0.1:5000/actualizarPersona/'+id,{
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(persona) 
+                });
+                if (response.ok){
+                    console.log("Se actualizo correctamente.");
+                }else{
+                    alert('Error al actualizar datos');
+                }
+                }catch(error) {
+                    console.error('Error al actualizar datos: ',error);
+                }
+            }
+
+        </script>
+    </body>
+</html>
